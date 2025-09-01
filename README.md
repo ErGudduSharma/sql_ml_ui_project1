@@ -124,15 +124,25 @@ GET /api/model/info - Get model information
 GET /api/reports - Get model performance reports
 
 🗂️ Project Structure
-text
-student-stress-analyzer/
-├── app.py                 # Main Flask application
-├── index.html            # Frontend HTML file
-├── requirements.txt      # Python dependencies
-├── database/
-│   └── schema.sql        # Database schema and sample data
-├── README.md            # Project documentation
-└── steps.txt            # Setup instructions
+
+stress_project/
+│── app.py
+│── index.html
+│── ml_pipeline.ipynb
+│── preprocessor.pkl
+│── requirements.txt
+│── sql_ml.session.sql
+│── stress_level_pipeline.pkl
+│── steps.txt
+│── README.md
+│── pyproject.toml
+│── .gitignore
+│── .env
+│── .python-version
+│── uv.lock
+│── .vscode/
+│── __pycache__/
+│── .venv/
 
 🧠 Machine Learning Details
 Data Preprocessing
@@ -271,5 +281,6 @@ Scikit-learn for machine learning algorithms
 Font Awesome for icons
 
 The research community for student stress analysis studies
+
 
 Note: This application is designed for educational purposes. Always consult with mental health professionals for actual stress assessment and management.
