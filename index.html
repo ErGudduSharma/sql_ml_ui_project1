@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Stress Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4e73df;
+            --primary-dark: #224abe;
+            --secondary: #858796;
+            --success: #1cc88a;
+            --info: #36b9cc;
+            --warning: #f6c23e;
+            --danger: #e74a3b;
+            --light: #f8f9fc;
+            --dark: #5a5c69;
+            --transition-speed: 0.3s;
+            --sidebar-width: 250px;
+            --sidebar-collapsed-width: 80px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        body {
+            background-color: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Login Section Styling */
+        #login-section {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        
+        #login-section.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .login-container {
+            animation: fadeInUp 0.8s ease;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        /* Main Application Layout */
+        #app-section {
+            opacity: 0;
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        #app-section.active {
+            opacity: 1;
+            display: flex;
+            animation: fadeIn 0.8s ease;
+        }
+        
+        /* Top Navigation */
+        .topbar {
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            padding: 0.75rem 1.5rem;
+            transition: all var(--transition-speed);
+            z-index: 100;
+        }
+        
+        /* Sidebar Styling */
+        .sidebar-container {
+            position: relative;
+            width: var(--sidebar-width);
+            transition: width var(--transition-speed);
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary) 10%, var(--primary-dark) 100%);
+            padding-top: 4rem;
+            z-index: 99;
+            transition: transform var(--transition-speed), width var(--transition-speed);
+            overflow-y: auto;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        
+        .sidebar.collapsed .nav-link span {
+            display: none;
+        }
+        
+        .sidebar.collapsed .nav-link i {
+            margin-right: 0;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 0.75rem 1rem;
+            margin: 0.25rem 0.75rem;
+            border-radius: 0.35rem;
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar .nav-link:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+        
+        .sidebar .nav-link:hover:before,
+        .sidebar .nav-link.active:before {
+            left: 0;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+        
+        .toggle-sidebar {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 101;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all var(--transition-speed);
+        }
+        
+        .toggle-sidebar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 1.5rem;
+            transition: margin-left var(--transition-speed);
+            flex: 1;
+        }
+        
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        
+        /* Card Styling */
+        .card {
+            border: none;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        
+        /* Stats Cards */
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), transparent);
+            transform: rotate(30deg);
+            z-index: 1;
+        }
+        
+        .stat-card .card-body {
+            position: relative;
+            z-index: 2;
+        }
+        
+        /* Button Styling */
+        .btn {
+            border-radius: 0.35rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        
+        .btn:hover:after {
+            animation: ripple 1s ease-out;
+        }
+        
+        /* Page Sections */
+        .page-section {
+            opacity: 0;
+            transform: translateY(20px);
+            display: none;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        
+        .page-section.active {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        /* Form Styling */
+        .form-control, .form-select {
+            border-radius: 0.35rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+            border-color: var(--primary);
+        }
+        
+        /* Progress Bar */
+        .progress {
+            border-radius: 0.35rem;
+            height: 0.5rem;
+        }
+        
+        /* Table Styling */
+        .table {
+            border-radius: 0.35rem;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            background-color: var(--light);
+        }
+        
+        /* Toast Container */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        /* Assistance Icon */
+        .assistance-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .assistance-icon:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Stress Level Indicators */
+        .stress-low { background-color: #d4edda; color: #155724; }
+        .stress-medium { background-color: #fff3cd; color: #856404; }
+        .stress-high { background-color: #f8d7da; color: #721c24; }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInLeft {
+            from { 
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeInRight {
+            from { 
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            20% {
+                transform: scale(25, 25);
+                opacity: 0.3;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(40, 40);
+            }
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: var(--sidebar-width);
+            }
+            
+            .sidebar.mobile-show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+            
+            .toggle-sidebar {
+                display: none;
+            }
+            
+            .mobile-menu-toggle {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+        }
+        
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--dark);
+        }
+        
+        @media (max-width: 992px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+        }
+        
+        /* Form Steps */
+        .form-step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .form-step.active {
+            display: block;
+        }
+        
+        /* Loading Spinner */
+        .spinner-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <section id="login-section" class="vh-100 d-flex align-items-center justify-content-center">
+        <div class="login-container">
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <div class="card o-hidden border-0 shadow-lg">
+                        <div class="card-body p-5">
+                            <div class="text-center">
+                                <h1 class="h4 text-gray-900 mb-4">Student Stress Analyzer</h1>
+                            </div>
+                            <form id="login-form" class="user">
+                                <div class="form-group mb-3">
+                                    <input type="text" class="form-control form-control-user" 
+                                           id="username" placeholder="Username" value="admin" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <input type="password" class="form-control form-control-user" 
+                                           id="password" placeholder="Password" value="admin123" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-user btn-block">
+                                    Login
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Application -->
+    <div id="app-section">
+        <nav class="navbar navbar-expand navbar-light bg-white topbar shadow">
+            <div class="container-fluid">
+                <button class="mobile-menu-toggle me-3" id="mobile-menu-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="navbar-brand">Student Stress Analyzer</span>
+                <div class="navbar-nav ms-auto">
+                    <button class="btn btn-outline-secondary" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="d-flex flex-grow-1">
+            <!-- Sidebar Container -->
+            <div class="sidebar-container">
+                <!-- Sidebar -->
+                <nav class="sidebar shadow" id="main-sidebar">
+                    <div class="position-sticky pt-3">
+                        <ul class="nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" data-section="dashboard">
+                                    <i class="fas fa-home"></i> <span>Dashboard</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="predict">
+                                    <i class="fas fa-brain"></i> <span>Predict Stress</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="data">
+                                    <i class="fas fa-table"></i> <span>Student Data</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="reports">
+                                    <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" id="train-model-btn">
+                                    <i class="fas fa-cogs"></i> <span>Train Model</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+
+                <!-- Toggle Sidebar Button (Desktop) -->
+                <div class="toggle-sidebar" id="toggle-sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="main-content flex-grow-1">
+                <!-- Dashboard Section -->
+                <div id="dashboard-section" class="page-section active">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Dashboard Overview</h2>
+                        <button class="btn btn-primary" id="refresh-dashboard">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary stat-card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Total Students</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-students">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success stat-card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Avg. Stress Level</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="avg-stress">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-brain fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info stat-card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Model Status</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="model-status">Not Trained</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-cog fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning stat-card shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Wellness Score</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="wellness-score">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-heart fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Stress Level Distribution</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="stressChart" height="100"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Stress Categories</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="stressPieChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predict Section -->
+                <div id="predict-section" class="page-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Predict Student Stress Level</h2>
+                        <div>
+                            <span class="badge bg-secondary me-2" id="current-step">Step 1 of 5</span>
+                            <button class="btn btn-outline-secondary btn-sm" id="reset-form-btn">
+                                <i class="fas fa-redo me-1"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <!-- Progress Bar -->
+                            <div class="card shadow mb-4">
+                                <div class="card-body">
+                                    <div class="progress mb-3" style="height: 20px;">
+                                        <div class="progress-bar" id="form-progress" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <small>Basic Info</small>
+                                        <small>Academic</small>
+                                        <small>Lifestyle</small>
+                                        <small>Health</small>
+                                        <small>Review</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step Navigation -->
+                            <div class="card shadow mb-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <button class="btn btn-outline-primary" id="prev-step-btn" disabled>
+                                            <i class="fas fa-arrow-left me-1"></i> Previous
+                                        </button>
+                                        <button class="btn btn-primary" id="next-step-btn">
+                                            Next <i class="fas fa-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Steps -->
+                            <div class="card shadow mb-4">
+                                <div class="card-body">
+                                    <!-- Step 1: Basic Information -->
+                                    <div class="form-step active" data-step="1">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-user me-2"></i>Basic Information</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Age *</label>
+                                                <input type="number" class="form-control" name="age" min="18" max="30" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Gender *</label>
+                                                <select class="form-select" name="gender" required>
+                                                    <option value="">Select Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 2: Academic Information -->
+                                    <div class="form-step" data-step="2">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-graduation-cap me-2"></i>Academic Information</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Academic Performance (1-5) *</label>
+                                                <input type="number" class="form-control" name="academic_performance" min="1" max="5" required>
+                                                <small class="form-text text-muted">1 = Poor, 5 = Excellent</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Study Hours (per day) *</label>
+                                                <input type="number" class="form-control" name="study_hours" step="0.1" min="0" max="15" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 3: Lifestyle -->
+                                    <div class="form-step" data-step="3">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-heart me-2"></i>Lifestyle</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Exercise Hours (per week) *</label>
+                                                <input type="number" class="form-control" name="exercise_hours" step="0.1" min="0" max="20" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Social Activity Level (1-5) *</label>
+                                                <input type="number" class="form-control" name="social_activity" min="1" max="5" required>
+                                                <small class="form-text text-muted">1 = Low, 5 = High</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Part-time Job *</label>
+                                                <select class="form-select" name="part_time_job" required>
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Screen Time (hours/day) *</label>
+                                                <input type="number" class="form-control" name="screen_time" step="0.1" min="0" max="15" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 4: Health & Wellness -->
+                                    <div class="form-step" data-step="4">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-heartbeat me-2"></i>Health & Wellness</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Sleep Quality (1-5) *</label>
+                                                <input type="number" class="form-control" name="sleep_quality" min="1" max="5" required>
+                                                <small class="form-text text-muted">1 = Poor, 5 = Excellent</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Anxiety Level (1-10) *</label>
+                                                <input type="number" class="form-control" name="anxiety_level" min="1" max="10" required>
+                                                <small class="form-text text-muted">1 = Low, 10 = High</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Diet Quality (1-10) *</label>
+                                                <input type="number" class="form-control" name="diet_quality" min="1" max="10" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Financial Stress (1-10) *</label>
+                                                <input type="number" class="form-control" name="financial_stress" min="1" max="10" required>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 5: Habits & Review -->
+                                    <div class="form-step" data-step="5">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-smoking me-2"></i>Habits & Review</h5>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Smoking (cigarettes/day) *</label>
+                                                <input type="number" class="form-control" name="smoking" min="0" max="20" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Alcohol (drinks/week) *</label>
+                                                <input type="number" class="form-control" name="alcohol" step="0.1" min="0" max="20" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="card border-primary">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <h6 class="mb-0">Review Your Information</h6>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="review-data" class="small">
+                                                            <!-- Review data will be populated here -->
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 6: Prediction Result -->
+                                    <div class="form-step" data-step="6">
+                                        <h5 class="text-primary mb-4"><i class="fas fa-brain me-2"></i>Prediction Result</h5>
+                                        <div class="text-center" id="prediction-result">
+                                            <p class="text-muted">Calculating your stress level...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-4">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Prediction Progress</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                                        <h5>Stress Level Prediction</h5>
+                                        <p class="text-muted">Complete all steps to get your prediction</p>
+                                    </div>
+                                    
+                                    <div class="list-group">
+                                        <div class="list-group-item list-group-item-action active">
+                                            <i class="fas fa-user me-2"></i>Basic Information
+                                        </div>
+                                        <div class="list-group-item">
+                                            <i class="fas fa-graduation-cap me-2"></i>Academic Info
+                                        </div>
+                                        <div class="list-group-item">
+                                            <i class="fas fa-heart me-2"></i>Lifestyle
+                                        </div>
+                                        <div class="list-group-item">
+                                            <i class="fas fa-heartbeat me-2"></i>Health & Wellness
+                                        </div>
+                                        <div class="list-group-item">
+                                            <i class="fas fa-smoking me-2"></i>Habits & Review
+                                        </div>
+                                        <div class="list-group-item">
+                                            <i class="fas fa-chart-line me-2"></i>Prediction Result
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer" id="prediction-actions" style="display: none;">
+                                    <button class="btn btn-success w-100" id="save-prediction-btn">
+                                        <i class="fas fa-save me-1"></i> Save Prediction
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Section -->
+                <div id="data-section" class="page-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Student Data</h2>
+                        <button class="btn btn-primary" id="fetch-data-btn">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                        </button>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Age</th>
+                                            <th>Gender</th>
+                                            <th>Academic</th>
+                                            <th>Stress</th>
+                                            <th>Sleep</th>
+                                            <th>Anxiety</th>
+                                            <th>Exercise</th>
+                                            <th>Study</th>
+                                            <th>Social</th>
+                                            <th>Financial</th>
+                                            <th>Job</th>
+                                            <th>Screen Time</th>
+                                            <th>Diet</th>
+                                            <th>Smoking</th>
+                                            <th>Alcohol</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="data-table-body">
+                                        <!-- Data will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" class="page-section">
+                    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                        <h2>Model Reports</h2>
+                        <button class="btn btn-primary" id="refresh-reports-btn">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh Reports
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Model Performance</h6>
+                                </div>
+                                <div class="card-body" id="model-performance">
+                                    <p class="text-muted">No training results available. Train the model first.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer -->
+        <footer class="bg-white text-center py-3 mt-auto">
+            <div class="container">
+                <span class="text-muted">© 2025 Student Stress Analyzer. All rights reserved.</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Assistance Modal -->
+    <div class="modal fade" id="assistanceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">How can I help you?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Welcome to the Student Stress Analyzer! Here's what you can do:</p>
+                    <ul>
+                        <li><strong>Dashboard:</strong> View overview statistics and charts</li>
+                        <li><strong>Predict Stress:</strong> Enter student data to predict stress levels</li>
+                        <li><strong>Student Data:</strong> View all student data from the database</li>
+                        <li><strong>Reports:</strong> See model performance metrics</li>
+                        <li><strong>Train Model:</strong> Retrain the ML model with latest data</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Assistance Icon -->
+    <div class="assistance-icon" data-bs-toggle="modal" data-bs-target="#assistanceModal">
+        <i class="fas fa-question"></i>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentPrediction = null;
+        let stressChart = null;
+        let stressPieChart = null;
+        let sidebarCollapsed = false;
+
+        // DOM Ready
+        $(document).ready(function() {
+            // Event listeners
+            $('#login-form').on('submit', handleLogin);
+            $('#logout-btn').on('click', handleLogout);
+            $('#fetch-data-btn, #refresh-dashboard').on('click', fetchData);
+            $('#refresh-reports-btn').on('click', loadReports);
+            $('#train-model-btn').on('click', trainModel);
+            $('#toggle-sidebar').on('click', toggleSidebar);
+            $('#mobile-menu-btn').on('click', toggleMobileSidebar);
+            
+            // Navigation
+            $('a[data-section]').on('click', function(e) {
+                e.preventDefault();
+                const section = $(this).data('section');
+                showSection(section);
+            });
+            
+            // Initialize form functionality
+            initFormSteps();
+        });
+
+        // Authentication
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = $('#username').val();
+            const password = $('#password').val();
+            
+            // Show loading animation
+            $('#login-form button').html('<span class="spinner-border spinner-border-sm" role="status"></span> Logging in...');
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('Error', data.error, 'danger');
+                    $('#login-form button').html('Login');
+                } else {
+                    currentUser = data.user;
+                    
+                    // Animate login screen fade out
+                    $('#login-section').addClass('hidden');
+                    
+                    // Show app after a short delay for animation
+                    setTimeout(() => {
+                        showApp();
+                        showToast('Success', 'Login successful!', 'success');
+                        loadDashboard();
+                    }, 500);
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Login failed', 'danger');
+                $('#login-form button').html('Login');
+            });
+        }
+
+        function handleLogout() {
+            // Animate app fade out
+            $('#app-section').removeClass('active');
+            
+            setTimeout(() => {
+                currentUser = null;
+                showLogin();
+                showToast('Success', 'Logged out successfully!', 'success');
+            }, 500);
+        }
+
+        // Navigation
+        function showLogin() {
+            $('#login-section').removeClass('hidden');
+            $('#app-section').removeClass('active');
+        }
+
+        function showApp() {
+            $('#app-section').addClass('active');
+        }
+
+        function showSection(sectionId) {
+            // Animate current section out
+            $('.page-section.active').removeClass('active');
+            
+            // Update navigation
+            $('.nav-link').removeClass('active');
+            $(`a[data-section="${sectionId}"]`).addClass('active');
+            
+            // Animate new section in after a short delay
+            setTimeout(() => {
+                $(`#${sectionId}-section`).addClass('active');
+                
+                // Load section-specific data
+                if (sectionId === 'dashboard') loadDashboard();
+                else if (sectionId === 'data') fetchData();
+                else if (sectionId === 'reports') loadReports();
+            }, 300);
+        }
+
+        function toggleSidebar() {
+            sidebarCollapsed = !sidebarCollapsed;
+            
+            if (sidebarCollapsed) {
+                $('#main-sidebar').addClass('collapsed');
+                $('.main-content').addClass('expanded');
+                $('#toggle-sidebar i').removeClass('fa-chevron-left').addClass('fa-chevron-right');
+            } else {
+                $('#main-sidebar').removeClass('collapsed');
+                $('.main-content').removeClass('expanded');
+                $('#toggle-sidebar i').removeClass('fa-chevron-right').addClass('fa-chevron-left');
+            }
+        }
+
+        function toggleMobileSidebar() {
+            $('#main-sidebar').toggleClass('mobile-show');
+        }
+
+        // Data functions
+        function loadDashboard() {
+            fetchData();
+            loadModelInfo();
+        }
+
+        function fetchData() {
+            // Show loading state
+            $('#total-students, #avg-stress, #wellness-score').html('<div class="spinner-border spinner-border-sm"></div>');
+            
+            fetch('/api/data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('Error', data.error, 'danger');
+                    return;
+                }
+                
+                $('#total-students').text(data.length);
+                
+                if (data.length > 0) {
+                    const avgStress = data.reduce((sum, item) => sum + (item.stress_level || 0), 0) / data.length;
+                    $('#avg-stress').text(avgStress.toFixed(1));
+                    $('#wellness-score').text((100 - (avgStress * 10)).toFixed(0));
+                    
+                    updateStressCharts(data);
+                    updateDataTable(data);
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to fetch data', 'danger');
+            });
+        }
+
+        function updateDataTable(data) {
+            const tableBody = $('#data-table-body');
+            tableBody.empty();
+            
+            data.forEach(item => {
+                const stressClass = item.stress_level <= 3 ? 'stress-low' : 
+                                  item.stress_level <= 7 ? 'stress-medium' : 'stress-high';
+                
+                const row = `
+                    <tr>
+                        <td>${item.age}</td>
+                        <td>${item.gender}</td>
+                        <td>${item.academic_performance}</td>
+                        <td><span class="badge ${stressClass}">${item.stress_level}</span></td>
+                        <td>${item.sleep_quality}</td>
+                        <td>${item.anxiety_level}</td>
+                        <td>${item.exercise_hours}</td>
+                        <td>${item.study_hours}</td>
+                        <td>${item.social_activity}</td>
+                        <td>${item.financial_stress}</td>
+                        <td>${item.part_time_job}</td>
+                        <td>${item.screen_time}</td>
+                        <td>${item.diet_quality}</td>
+                        <td>${item.smoking}</td>
+                        <td>${item.alcohol}</td>
+                    </tr>
+                `;
+                tableBody.append(row);
+            });
+        }
+
+        function updateStressCharts(data) {
+            // Count stress levels
+            const stressCounts = { low: 0, medium: 0, high: 0 };
+            data.forEach(item => {
+                if (item.stress_level <= 3) stressCounts.low++;
+                else if (item.stress_level <= 7) stressCounts.medium++;
+                else stressCounts.high++;
+            });
+            
+            // Bar chart
+            const barCtx = document.getElementById('stressChart').getContext('2d');
+            if (stressChart) stressChart.destroy();
+            
+            stressChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Low', 'Medium', 'High'],
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: [stressCounts.low, stressCounts.medium, stressCounts.high],
+                        backgroundColor: ['#d4edda', '#fff3cd', '#f8d7da'],
+                        borderColor: ['#c3e6cb', '#ffeaa7', '#f5c6cb'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+            
+            // Pie chart
+            const pieCtx = document.getElementById('stressPieChart').getContext('2d');
+            if (stressPieChart) stressPieChart.destroy();
+            
+            stressPieChart = new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Low Stress', 'Medium Stress', 'High Stress'],
+                    datasets: [{
+                        data: [stressCounts.low, stressCounts.medium, stressCounts.high],
+                        backgroundColor: ['#d4edda', '#fff3cd', '#f8d7da'],
+                        borderColor: ['#c3e6cb', '#ffeaa7', '#f5c6cb'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function loadModelInfo() {
+            fetch('/api/model/info')
+            .then(response => response.json())
+            .then(data => {
+                $('#model-status').text(data.model_loaded ? 'Trained' : 'Not Trained');
+            });
+        }
+
+        function loadReports() {
+            fetch('/api/reports')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    $('#model-performance').html('<p class="text-muted">No training results available. Train the model first.</p>');
+                    return;
+                }
+                
+                const html = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h6>Best Model</h6>
+                                    <h4>${data.best_model}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h6>Accuracy</h6>
+                                    <h4>${(data.accuracy * 100).toFixed(2)}%</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-info text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h6>CV Score</h6>
+                                    <h4>${(data.all_results[data.best_model].cv_mean * 100).toFixed(2)}%</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('#model-performance').html(html);
+            })
+            .catch(error => {
+                $('#model-performance').html('<p class="text-muted">No reports available</p>');
+            });
+        }
+
+        // Prediction functions
+        function savePrediction() {
+            if (!currentPrediction) {
+                showToast('Error', 'No prediction to save', 'danger');
+                return;
+            }
+            
+            fetch('/api/predictions/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(currentPrediction)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('Error', data.error, 'danger');
+                } else {
+                    showToast('Success', 'Prediction saved successfully!', 'success');
+                    $('#prediction-actions').hide();
+                    currentPrediction = null;
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to save prediction', 'danger');
+            });
+        }
+
+        function trainModel() {
+            if (!confirm('Training the model may take several minutes. Continue?')) {
+                return;
+            }
+            
+            fetch('/api/train', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showToast('Error', data.error, 'danger');
+                } else {
+                    showToast('Success', 'Training started!', 'success');
+                    pollTrainingStatus();
+                }
+            })
+            .catch(error => {
+                showToast('Error', 'Failed to start training', 'danger');
+            });
+        }
+
+        function pollTrainingStatus() {
+            const checkStatus = () => {
+                fetch('/api/train/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.is_training) {
+                        if (data.error) {
+                            showToast('Error', data.error, 'danger');
+                        } else {
+                            showToast('Success', 'Training completed!', 'success');
+                            loadModelInfo();
+                            if ($('#reports-section').hasClass('active')) {
+                                loadReports();
+                            }
+                        }
+                    } else {
+                        setTimeout(checkStatus, 3000);
+                    }
+                });
+            };
+            
+            setTimeout(checkStatus, 3000);
+        }
+
+        // Form steps functionality
+        function initFormSteps() {
+            let currentStep = 1;
+            const totalSteps = 6;
+
+            function updateFormProgress() {
+                // Update progress bar
+                const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+                $('#form-progress').css('width', progress + '%').attr('aria-valuenow', progress);
+                
+                // Update step indicator
+                $('#current-step').text(`Step ${currentStep} of ${totalSteps}`);
+                
+                // Show/hide navigation buttons
+                $('#prev-step-btn').prop('disabled', currentStep === 1);
+                $('#next-step-btn').text(currentStep === totalSteps ? 'Get Prediction' : 'Next');
+                
+                // Show current step, hide others with animation
+                $('.form-step').removeClass('active').hide();
+                $(`.form-step[data-step="${currentStep}"]`).addClass('active').show();
+                
+                // Update progress list
+                $('.list-group-item').removeClass('active');
+                $(`.list-group-item:nth-child(${currentStep})`).addClass('active');
+                
+                // If we're on the review step, populate review data
+                if (currentStep === 5) {
+                    populateReviewData();
+                }
+                
+                // If we're on the prediction step, make the prediction
+                if (currentStep === 6) {
+                    makePrediction();
+                }
+            }
+
+            function populateReviewData() {
+                const formData = {};
+                $('input, select').each(function() {
+                    if ($(this).attr('name')) {
+                        formData[$(this).attr('name')] = $(this).val();
+                    }
+                });
+                
+                let reviewHtml = '';
+                Object.entries(formData).forEach(([key, value]) => {
+                    if (value) {
+                        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        reviewHtml += `<div class="row mb-2">
+                            <div class="col-6"><strong>${label}:</strong></div>
+                            <div class="col-6">${value}</div>
+                        </div>`;
+                    }
+                });
+                
+                $('#review-data').html(reviewHtml);
+            }
+
+            function makePrediction() {
+                const formData = {};
+                $('input, select').each(function() {
+                    if ($(this).attr('name')) {
+                        let value = $(this).val();
+                        // Convert numeric values to appropriate types
+                        if ($(this).attr('type') === 'number') {
+                            value = parseFloat(value);
+                        }
+                        formData[$(this).attr('name')] = value;
+                    }
+                });
+                
+                $('#prediction-result').html('<div class="text-center"><div class="spinner-border text-primary mb-3"></div><p>Analyzing your data...</p></div>');
+                
+                fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        $('#prediction-result').html(`<div class="alert alert-danger">${data.error}</div>`);
+                    } else {
+                        currentPrediction = {
+                            ...formData,
+                            predicted_stress_level: data.prediction
+                        };
+                        
+                        const stressClass = data.prediction === 0 ? 'stress-low' : 
+                                          data.prediction === 1 ? 'stress-medium' : 'stress-high';
+                        
+                        const resultHtml = `
+                            <div class="text-center">
+                                <div class="display-4 ${stressClass} mb-3">${data.stress_level}</div>
+                                <p class="mb-2"><strong>Stress Level:</strong> ${data.stress_level}</p>
+                                <p class="mb-3"><strong>Wellness Score:</strong> ${data.wellness_score}</p>
+                                <div class="progress-stacked mb-2">
+                                    <div class="progress" style="width: 33%">
+                                        <div class="progress-bar stress-low" style="width: ${data.probabilities[0] * 100}%">
+                                            ${(data.probabilities[0] * 100).toFixed(1)}%
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="width: 34%">
+                                        <div class="progress-bar stress-medium" style="width: ${data.probabilities[1] * 100}%">
+                                            ${(data.probabilities[1] * 100).toFixed(1)}%
+                                        </div>
+                                    </div>
+                                    <div class="progress" style="width: 33%">
+                                        <div class="progress-bar stress-high" style="width: ${data.probabilities[2] * 100}%">
+                                            ${(data.probabilities[2] * 100).toFixed(1)}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Low | Medium | High Probability</small>
+                            </div>
+                        `;
+                        
+                        $('#prediction-result').html(resultHtml);
+                        $('#prediction-actions').show();
+                    }
+                })
+                .catch(error => {
+                    $('#prediction-result').html('<div class="alert alert-danger">Prediction failed. Please try again.</div>');
+                });
+            }
+
+            function validateStep(step) {
+                let isValid = true;
+                $(`.form-step[data-step="${step}"] input, .form-step[data-step="${step}"] select`).each(function() {
+                    if ($(this).prop('required') && !$(this).val()) {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                });
+                return isValid;
+            }
+
+            // Event listeners for form navigation
+            $('#next-step-btn').on('click', function() {
+                if (validateStep(currentStep)) {
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateFormProgress();
+                    } else {
+                        // This is the prediction step, handled in updateFormProgress
+                    }
+                } else {
+                    showToast('Error', 'Please fill in all required fields', 'danger');
+                }
+            });
+
+            $('#prev-step-btn').on('click', function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateFormProgress();
+                }
+            });
+
+            $('#reset-form-btn').on('click', function() {
+                if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+                    currentStep = 1;
+                    $('input, select').val('');
+                    updateFormProgress();
+                    $('#prediction-actions').hide();
+                    $('#prediction-result').html('<p class="text-muted">Complete the form to see prediction results</p>');
+                }
+            });
+
+            // Initialize form
+            updateFormProgress();
+            
+            // Save prediction button
+            $('#save-prediction-btn').on('click', savePrediction);
+        }
+
+        // Utility functions
+        function showToast(title, message, type = 'info') {
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div class="toast align-items-center text-white bg-${type}" id="${toastId}">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${title}:</strong> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            $('.toast-container').append(toastHtml);
+            new bootstrap.Toast(document.getElementById(toastId)).show();
+            
+            // Remove toast after it's hidden
+            setTimeout(() => {
+                $(`#${toastId}`).remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

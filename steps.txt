@@ -1,0 +1,207 @@
+Steps to Set Up and Run Student Stress Analyzer
+📋 Prerequisites
+Python 3.8 or higher
+
+MySQL Server
+
+pip (Python package manager)
+
+🚀 Step-by-Step Setup
+1. Clone or Download the Project Files
+bash
+git clone https://github.com/your-username/student-stress-analyzer.git
+cd student-stress-analyzer
+2. Create a Virtual Environment
+bash
+# Windows
+python -m venv venv
+
+# Mac/Linux
+python3 -m venv venv
+3. Activate the Virtual Environment
+bash
+# Windows
+venv\Scripts\activate
+
+# Mac/Linux
+source venv/bin/activate
+4. Install Dependencies
+bash
+pip install -r requirements.txt
+5. Set Up MySQL Database
+Install MySQL if not already installed
+
+Start MySQL service
+
+Create a database named 'test_db'
+
+Create a user with privileges to access the database
+
+Update the DB_CONFIG in app.py with your database credentials:
+
+python
+DB_CONFIG = {
+    'user': 'your_username',
+    'password': 'your_password',
+    'host': 'localhost',
+    'database': 'test_db'
+}
+6. Import the Database Schema
+Run the SQL commands from database/schema.sql to create the necessary tables
+
+7. Run the Application
+bash
+python app.py
+8. Access the Application
+Open a web browser and go to:
+
+text
+http://localhost:5000
+9. Login Credentials
+Username: admin
+
+Password: admin123
+
+10. Train the Initial Model
+Click on "Train Model" in the sidebar
+
+Confirm the training operation
+
+Wait for training to complete (this may take several minutes)
+
+11. Make Predictions
+Navigate to "Predict Stress" in the sidebar
+
+Fill out the multi-step form with student data
+
+View the prediction results
+
+🧪 Testing the API
+Using Postman
+Set request method to POST
+
+Use endpoint: http://localhost:5000/api/predict
+
+Set Headers: Content-Type: application/json
+
+Send JSON body:
+
+json
+{
+  "age": 20,
+  "gender": "Male",
+  "academic_performance": 4,
+  "sleep_quality": 3,
+  "anxiety_level": 6,
+  "exercise_hours": 2.5,
+  "study_hours": 5.0,
+  "social_activity": 3,
+  "financial_stress": 7,
+  "part_time_job": "Yes",
+  "screen_time": 8.0,
+  "diet_quality": 5,
+  "smoking": 0,
+  "alcohol": 2.0
+}
+Expected response:
+
+json
+{
+  "prediction": 1,
+  "stress_level": "Medium",
+  "probabilities": [0.2, 0.6, 0.2],
+  "wellness_score": 67
+}
+🔧 Troubleshooting
+Database Connection Errors
+Check that MySQL is running
+
+Verify your database credentials in app.py
+
+Ensure the database and tables exist
+
+Package Installation Errors
+Make sure you're using Python 3.8+
+
+Try upgrading pip: pip install --upgrade pip
+
+Model Training Failures
+Make sure you have enough data in the database
+
+Check that all required packages are installed
+
+Prediction Errors
+Verify all required fields are provided in the correct format
+
+Ensure the model has been trained before making predictions
+
+🚀 For Production Deployment
+Set up a production WSGI server like Gunicorn
+
+Use a production-grade database
+
+Set proper environment variables for configuration
+
+Implement proper security measures
+
+Set up a reverse proxy (Nginx)
+
+Configure SSL certificates for HTTPS
+
+📊 Machine Learning Details
+Data Preprocessing
+Handled missing values with median/mode imputation
+
+Scaled numerical features using StandardScaler
+
+Encoded categorical variables using One-Hot Encoding
+
+Addressed class imbalance with SMOTE
+
+Model Training
+Implemented Random Forest and XGBoost classifiers
+
+Used Stratified K-Fold cross-validation (3 folds)
+
+Selected best model based on accuracy metrics
+
+Saved pipeline including preprocessing and model
+
+Evaluation Metrics
+Accuracy: Overall prediction correctness
+
+Cross-validation scores: Model stability assessment
+
+Precision/Recall: Performance on minority classes
+
+📁 Project Structure
+text
+student-stress-analyzer/
+├── app.py                 # Main Flask application
+├── index.html            # Frontend HTML file
+├── requirements.txt      # Python dependencies
+├── README.md            # Project documentation
+├── steps.txt            # This file
+└── database/
+    └── schema.sql        # Database schema and sample data
+⏰ Typical Workflow
+Start the application: python app.py
+
+Open browser to: http://localhost:5000
+
+Login with admin credentials
+
+Train the model (first time only)
+
+Navigate to "Predict Stress" to make predictions
+
+View results in the dashboard or data tables
+
+📝 Notes
+The initial dataset contains sample data for testing
+
+For accurate predictions, add more real student data to the database
+
+The model can be retrained as new data is added
+
+All predictions are saved to the database for future analysis
