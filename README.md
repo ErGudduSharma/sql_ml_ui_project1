@@ -126,23 +126,23 @@ GET /api/reports - Get model performance reports
 🗂️ Project Structure
 
 stress_project/
-│── app.py
-│── index.html
-│── ml_pipeline.ipynb
-│── preprocessor.pkl
-│── requirements.txt
-│── sql_ml.session.sql
-│── stress_level_pipeline.pkl
-│── steps.txt
-│── README.md
-│── pyproject.toml
-│── .gitignore
-│── .env
-│── .python-version
-│── uv.lock
-│── .vscode/
-│── __pycache__/
-│── .venv/
+│── app.py                      # Main Flask application
+│── index.html                  # Frontend HTML file
+│── ml_pipeline.ipynb           # Jupyter notebook for ML workflow
+│── preprocessor.pkl            # Saved preprocessing pipeline
+│── requirements.txt            # Python dependencies
+│── sql_ml.session.sql          # SQL database schema/operations
+│── stress_level_pipeline.pkl   # Full ML pipeline (preprocessing + model)
+│── steps.txt                   # Setup/installation instructions
+│── README.md                   # Project documentation
+│── pyproject.toml              # Python project config (modern setup)
+│── .gitignore                  # Git ignore rules
+│── .env                        # Environment variables
+│── .python-version             # Python version specification
+│── uv.lock                     # Dependency lock file (using uv)
+│── .vscode/                    # VS Code configuration
+│── __pycache__/                # Python cache files
+│── .venv/                      # Python virtual environment
 
 🧠 Machine Learning Details
 Data Preprocessing
@@ -284,3 +284,4 @@ The research community for student stress analysis studies
 
 
 Note: This application is designed for educational purposes. Always consult with mental health professionals for actual stress assessment and management.
+
