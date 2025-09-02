@@ -33,7 +33,7 @@ CORS(app, supports_credentials=True, origins=["http://localhost:5000", "http://1
 # Database configuration
 DB_CONFIG = {
     'user': 'root',
-    'password': '050901',
+    'password': '0509**',
     'host': 'localhost',
     'database': 'test_db'
 }
@@ -376,4 +376,5 @@ def get_reports():
         return jsonify({'error': 'No training results available'}), 404
 
 if __name__ == '__main__':
+
     app.run(debug=True, port=5000, host='0.0.0.0')
