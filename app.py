@@ -33,7 +33,7 @@ CORS(app, supports_credentials=True, origins=["http://localhost:5000", "http://1
 # Database configuration
 DB_CONFIG = {
     'user': 'root',
-    'password': '0509**',
+    'password': '******',
     'host': 'localhost',
     'database': 'test_db'
 }
@@ -378,3 +378,4 @@ def get_reports():
 if __name__ == '__main__':
 
     app.run(debug=True, port=5000, host='0.0.0.0')
+
